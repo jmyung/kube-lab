@@ -52,3 +52,50 @@ curl http://localhost:8888
 ```
 cat Dockerfile
 ```
+
+##### 3-2. 웹서버 도커 이미지 빌드
+```
+sudo docker build -t py-web-server:v1 .
+```
+
+##### 3-3. 웹서버 도커 이미지 실행
+
+```
+sudo docker run -d -p 8888:8888 --name py-web-server -h my-web-server py-web-server:v1
+```
+
+##### 3-4. 테스트
+
+```
+curl http://localhost:8888
+sudo docker rm -f py-web-server
+```
+
+### 4. 도커 이미지 푸시 및 실행
+
+##### 4-1. 도커 이미지 이름 변경
+
+```
+sudo docker tag [before] [after]
+```
+
+##### 4-2. 도커 사이트 가입
+
+- docker.com 가입
+- 로그인
+```
+sudo docker login
+로긴정보 입력
+```
+
+##### 4-3. 도커 이미지 푸시
+
+```
+sudo docker push [after]
+```
+
+##### 4-4. 도커 레지스트리 이미지로 실행
+
+```
+docker run -d -p 8888:8888 -h my-web-server 도커ACCOUNT/py-web-server:v1
+```
