@@ -23,4 +23,11 @@
 #### 4-2. Spinnaker
 #### 4-3. Istio
 
-## 5. CKA 대비 기출풀이
+## 5. Helm
+
+## 6. Monitoring and Logging
+
+## 7. 미니 프로젝트
+ - popular movie store
+
+## 8. CKA 대비 기출풀이
