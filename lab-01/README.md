@@ -99,3 +99,7 @@ sudo docker push [after]
 ```
 docker run -d -p 8888:8888 -h my-web-server 도커ACCOUNT/py-web-server:v1
 ```
+
+
+
+## Docker composer 로 워드프레스 띄워보기
