@@ -119,8 +119,6 @@ spec:
 
 ## 3. 포트 포워딩
 
-교재 83쪽
-
 참고 : https://github.com/kubernetes-up-and-running/kuard
 
 ### 3-1. kuard-pod.yaml
