@@ -12,6 +12,7 @@
 ## 3. Kubectl
 #### 3-1. Pod
 - [Lab-02](./doc/pod.md)
+- [Lab-03](./doc/Lab-03.md)
 #### 3-2. Deploy
 #### 3-3. Service
 #### 3-4. DaemonSet
