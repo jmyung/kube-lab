@@ -112,9 +112,6 @@ spec:
   containers:
   - name: nginx
     image: nginx
-    imagePullPolicy: IfNotPresent
-  nodeSelector:
-    disktype: ssd
 ```
 
 ## 3. 포트 포워딩
@@ -152,11 +149,6 @@ kubectl port-forward kuard 8080:8080
 
 http://localhost:8080 확인
 
-확인안되면
-
-```shell
-kubectl run -i --tty busybox --image=busybox -- sh  # Run pod as interactive shell
-```
 
 ### 3-4. 로그 확인
 
@@ -168,6 +160,74 @@ kubectl run -i --tty busybox --image=busybox -- sh  # Run pod as interactive she
 kubectl logs kuard
 ```
 
-## 4. 미니큐브 띄워보기
+## 4. 하나의 파드, 두개의 컨테이너
+
+https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/#creating-a-pod-that-runs-two-containers
+
+two-container-pod.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: two-containers
+spec:
+
+  restartPolicy: Never
+
+  volumes:
+  - name: shared-data
+    emptyDir: {}
+
+  containers:
+
+  - name: nginx-container
+    image: nginx
+    volumeMounts:
+    - name: shared-data
+      mountPath: /usr/share/nginx/html
+
+  - name: debian-container
+    image: debian
+    volumeMounts:
+    - name: shared-data
+      mountPath: /pod-data
+    command: ["/bin/sh"]
+    args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
+```
+
+컨테이너 쉘 접속
+
+```sh
+kubectl exec -it two-containers -c nginx-container -- /bin/bash
+
+root@two-containers:/ apt-get update
+root@two-containers:/ apt-get install curl procps
+root@two-containers:/ ps aux
+
+root@two-containers:/ curl localhost
+```
+
+포트포워딩 후 로컬에서 접속
+
+```
+how?
+```
+
+파드 상태를 확인해봅시다.
+
+```sh
+kubectl get po
+
+NAME             READY     STATUS      RESTARTS   AGE
+two-containers   1/2       Completed   0          20m
+```
+
+왜 하나만 살아있을까요?
+
+나머지 하나도 계속 running 상태가 되도록 한번 변경해봅시다.
+
+
+## 5. 미니큐브 띄워보기
 
 https://kubernetes.io/ko/docs/tutorials/hello-minikube/
