@@ -2,17 +2,26 @@
 
 본 랩에서는 파드를 정의하는 매니패스트를 직접 작성해봅니다.
 
-## 1. 에디터 설치
+## 1. 클러스터 올리기
 
-- 본랩에서는 vi를 사용합니다.
+### 1-1. project zone 셋팅
+```
+gcloud config set compute/zone us-central1-a
+```
 
-alias 설정
+### 1-2. 클러스터 생성
+```
+gcloud container clusters create lab02 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
+```
 
+### 1-3. alias 설정
 ```shell
 alias k=kubectl
 ```
 
 ## 2. 파드 매니페스트 생성 / 실행
+
+- 본랩에서는 vi를 사용합니다.
 
 ### 2-1. nginx 컨테이터 이미지를 Pod으로 띄워보기
 
