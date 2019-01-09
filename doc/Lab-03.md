@@ -11,7 +11,7 @@ gcloud config set compute/zone us-central1-a
 
 ### 1-2. 클러스터 생성
 ```
-gcloud container clusters create lab02 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
+gcloud container clusters create lab03 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
 ```
 
 ### 1-3. alias 설정
