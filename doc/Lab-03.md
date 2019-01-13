@@ -236,7 +236,10 @@ two-containers   1/2       Completed   0          20m
 
 나머지 하나도 계속 running 상태가 되도록 한번 변경해봅시다.
 
+## 5. 클러스터 삭제
 
-## 5. 미니큐브 띄워보기
+`gcloud container clusters delete lab03
+`
+## 6. 미니큐브 띄워보기
 
 https://kubernetes.io/ko/docs/tutorials/hello-minikube/
