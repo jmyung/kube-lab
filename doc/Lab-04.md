@@ -1,8 +1,17 @@
 # 쿠버네티스 클러스터 설치
 
-본 랩에서는 kubeadm 으로 단일 마스터 클러스터를 구성해봅니다.
-참고 : https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
+클러스터를 설치하는 방법에는 여러가지가 있습니다.
 
+1. Heptio
+2. kubeadm
+3. kube-spray
+4. cluster-api
+5. kops
+
+
+본 랩에서는 kubeadm 으로 단일 마스터 클러스터를 구성해봅니다.
+
+- 참고 : https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
 
 ## 1. VM 생성
 
