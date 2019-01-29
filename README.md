@@ -16,6 +16,7 @@
 - [Lab-02](./doc/Lab-02.md)
 - [Lab-03](./doc/Lab-03.md)
 #### 3-2. Deployment
+- [Lab-05](./doc/Lab-05.md)
 #### 3-3. Service
 #### 3-4. DaemonSet
 #### 3-5. Job
