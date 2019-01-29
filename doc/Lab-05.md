@@ -112,11 +112,46 @@ kubectl create secret generic tls-certs --from-file tls/
 kubectl create configmap nginx-frontend-conf --from-file=nginx/frontend.conf
 kubectl create -f deployments/frontend.yaml
 kubectl create -f services/frontend.yaml
+kubectl get services frontend
+curl -ks https://<EXTERNAL-IP>
+```
+
+### 1-2. 스케일링
+
+#### 파드 개수를 5개로 늘리기
+
+```sh
+kubectl scale deployment hello --replicas=5
+kubectl get pods | grep hello- | wc -l
+```
+
+#### 파드 개수를 3개로 줄이기
+
+```sh
+kubectl scale deployment hello --replicas=3
+kubectl get pods | grep hello- | wc -l
 ```
 
 
 ## 2. 롤링 업데이트 (Rolling update)
 
+![rolling](https://gcpstaging-qwiklab-website-prod.s3.amazonaws.com/bundles/assets/b9ce83f6343906592ff307ff71c11c4f7e4bc9f2831f3ee4169b08e281d499bd.png)
+
+```sh
+kubectl edit deployment hello
+```
+```sh
+...
+containers:
+- name: hello
+  image: kelseyhightower/hello:2.0.0
+...
+```
+```sh
+kubectl get replicaset
+kubectl rollout history deployment/hello
+kubectl rollout status deployment/hello
+```
 
 ## 3. 카나리 디플로이먼트 (Canary deployments)
 
