@@ -8,6 +8,10 @@
 
 
 
+## 0. 클러스터 설치
+```
+gcloud container clusters create lab05 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
+```
 
 
 ## 1. Deployment 맛보기
@@ -21,8 +25,9 @@ kubectl explain deployment --recursive
 kubectl explain deployment.metadata.name
 ```
 
-https://github.com/googlecodelabs/orchestrate-with-kubernetes.git
-
+```sh
+git clone https://github.com/googlecodelabs/orchestrate-with-kubernetes.git
+```
 
 #### deployments/auth.yaml
 
