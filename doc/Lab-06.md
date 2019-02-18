@@ -3,7 +3,7 @@
 본 랩에서는 어플리케이션을 배포하는 디플로이먼트에 대해 알아보겠습니다.
 
 - 카나리 디플로이먼트 (Canary deployments)
-- 블루-그린 디플로이먼트 (Blue-green deployments)
+- 블루-그린 디플로이먼트 (Blue-green deployments) : 다음시간
 
 
 ## 0. 클러스터 설치
@@ -12,8 +12,10 @@
 ```
 gcloud container clusters create lab05 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
 ```
+
 - 프로젝트 설정
 ```gcloud config set project PROJECT_ID```
+
 
 
 ## 1. Deployment (Lab-05)
@@ -46,6 +48,7 @@ curl -ks https://IP
 kubectl create -f deployments/hello-canary.yaml
 ```
 
+
 - hello 앱 확인하기
 ```sh
 $ kubectl get pods | grep hello
@@ -59,11 +62,11 @@ hello-canary-66f697bdf6-f7bc7   1/1       Running   0          7s
 
 
 - OUTPUT
- - 연속해서 이하 커맨드 수행
+  - 연속해서 이하 커맨드 수행
 ```sh
 curl -ks https://IP/version
 ```
- - 결과 확인 : 25%의 비율로 카나리 App(2.0.0)에 요청하는 것을 확인할 수 있습니다.
+  - 결과 확인 : 25%의 비율로 카나리 App(2.0.0)에 요청하는 것을 확인할 수 있습니다.
 ```sh
 $ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
