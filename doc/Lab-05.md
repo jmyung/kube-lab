@@ -1,10 +1,10 @@
-# 디플로이먼트
+# 디플로이먼트 첫번째
 
 본 랩에서는 어플리케이션을 배포하는 디플로이먼트에 대해 알아보겠습니다.
 
 - 롤링 업데이트 (Rolling update)
-- 카나리 디플로이먼트 (Canary deployments)
-- 블루-그린 디플로이먼트 (Blue-green deployments)
+- 카나리 디플로이먼트 (Canary deployments) : 다음시간
+- 블루-그린 디플로이먼트 (Blue-green deployments) : 다음시간
 
 
 
@@ -157,7 +157,3 @@ kubectl get replicaset
 kubectl rollout history deployment/hello
 kubectl rollout status deployment/hello
 ```
-
-## 3. 카나리 디플로이먼트 (Canary deployments)
-
-## 4. 블루-그린 디플로이먼트 (Blue-green deployments)
