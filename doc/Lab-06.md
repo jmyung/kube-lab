@@ -3,7 +3,7 @@
 본 랩에서는 어플리케이션을 배포하는 디플로이먼트에 대해 알아보겠습니다.
 
 - 카나리 디플로이먼트 (Canary deployments)
-- 블루-그린 디플로이먼트 (Blue-green deployments) : 다음시간
+- 블루-그린 디플로이먼트 (Blue-green deployments)
 
 
 ## 0. 클러스터 설치
