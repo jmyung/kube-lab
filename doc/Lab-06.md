@@ -10,7 +10,7 @@
 
 - 클러스터 설치
 ```
-gcloud container clusters create lab05 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
+gcloud container clusters create lab06 --num-nodes 5 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
 ```
 
 - 프로젝트 설정
