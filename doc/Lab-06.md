@@ -100,7 +100,7 @@ $ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
 ```
 
-- 이상이 없으면 1.0.0 디플로이먼트를 삭제하고 2.0.0의 레플리카를 늘려준다
+- 이상이 없으면 1.0.0 디플로이먼트를 삭제하고 2.0.0의 레플리카를 늘려줍니다.
 
 - 만약 클라이언트에서 한가지 버전만 보고 싶다면 (헷갈리지 않도록) `sessionAffinity: ClientIP` 속성 정의
 ```sh
@@ -154,4 +154,110 @@ $ curl -ks https://35.193.9.190/version
 $ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
 ```
-어떤 사람은 1.0.0 나올 수도 있다.
+어떤 사람은 1.0.0 나올 수도 있습니다.
+
+
+
+
+
+## 3. 블루-그린 디플로이먼트 (Blue-green deployments)
+
+![blue-green](https://gcpstaging-qwiklab-website-prod.s3.amazonaws.com/bundles/assets/3ce5bc436e3b64a358fb21c86abb42b2812ef0c02287b938bb5b70bac0b1ea9c.png)
+
+### 3-1. 블루 서비스 올리기 (이미지 버전 1.0.0)
+
+- 기존 1.0.0 에 붙음
+
+```sh
+kubectl apply -f services/hello-blue.yaml
+```
+
+```sh
+selector:
+  app: "hello"
+  version: 1.0.0
+```
+
+- 테스트
+
+```sh
+curl -ks https://`kubectl get svc frontend -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"`/version
+```
+
+### 3-2. 그린 디플로이먼트 올리기 (이미지 버전 2.0.0)
+
+- 새로운 버전 (2.0.0)의 그린 디플로이먼트를 올립니다.
+
+`hello-green.yaml`
+
+```sh
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hello-green
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: hello
+        track: stable
+        version: 2.0.0
+    spec:
+      containers:
+        - name: hello
+          image: kelseyhightower/hello:2.0.0
+          ports:
+            - name: http
+              containerPort: 80
+            - name: health
+              containerPort: 81
+          resources:
+            limits:
+              cpu: 0.2
+              memory: 10Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 81
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 81
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+```
+
+- 배포
+```sh
+kubectl create -f deployments/hello-green.yaml
+```
+```sh
+curl -ks https://`kubectl get svc frontend -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"`/version
+```
+하지만, 여전히 1.0.0
+
+
+- 그린 서비스 올리기
+```sh
+kubectl apply -f services/hello-green.yaml
+```
+```
+curl -ks https://`kubectl get svc frontend -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"`/version
+```
+
+
+### 3-3. 롤백 (이미지 버전 1.0.0 으로 다시)
+
+```sh
+kubectl apply -f services/hello-blue.yaml
+```
+- 결과 확인
+```sh
+curl -ks https://`kubectl get svc frontend -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"`/version
+```
