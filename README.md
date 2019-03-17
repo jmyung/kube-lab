@@ -30,6 +30,7 @@
 #### 4-3. Istio
 
 ## 5. Helm
+- [Lab-helm](./doc/Lab-helm.md)
 
 ## 6. Monitoring and Logging
 
