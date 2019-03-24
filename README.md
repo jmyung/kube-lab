@@ -26,6 +26,7 @@
 
 ## 4. CI / CD
 #### 4-1. Jenkins
+- [Lab-07](./doc/Lab-07.md)
 #### 4-2. Spinnaker
 #### 4-3. Istio
 
