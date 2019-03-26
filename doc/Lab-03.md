@@ -32,7 +32,7 @@ alias k=kubectl
 쿠버네티스 오브젝트의 스펙을 기술해 봅니다.
 
 ```shell
-vi pod1.yaml
+vi pod2-1.yaml
 ```
 
 pod2-1.yaml
@@ -106,6 +106,9 @@ kubectl label node 이름 disktype=ssd
   - 각 네임스페이스는 객체 집합을 담고 있는 폴더로 생각할 수 있습니다.
   - 명시를 안하면, default namespace
 
+```sh
+kubectl create ns kuba
+```
 
 pod2-3.yaml
 

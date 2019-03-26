@@ -68,35 +68,21 @@ curl -ks https://IP/version
 ```
   - 결과 확인 : 25%의 비율로 카나리 App(2.0.0)에 요청하는 것을 확인할 수 있습니다.
 ```sh
-$ curl -ks https://35.193.9.190/version
+$ while true; do curl -ks https://IP/version; sleep 1; done
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"1.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
 ```
 
@@ -133,25 +119,16 @@ status:
   loadBalancer: {}
 ```
 ```sh
-$ curl -ks https://35.193.9.190/version
+$ while true; do curl -ks https://IP/version; sleep 1; done
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
-$ curl -ks https://35.193.9.190/version
 {"version":"2.0.0"}
 ```
 어떤 사람은 1.0.0 나올 수도 있습니다.

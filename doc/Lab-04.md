@@ -99,7 +99,7 @@ EOF
 ### 3-1. Docker, Kubeadm, Kubelet, Kubectl 설치
 ```sh
 sudo apt-get update
-sudo apt-get install -y docker-ce=18.06.1~ce~3-0~ubuntu kubelet=1.12.2-00 kubeadm=1.12.2-00 kubectl=1.12.2-00
+sudo apt-get install -y docker-ce=18.06.1~ce~3-0~ubuntu kubelet kubeadm kubectl
 sudo apt-mark hold docker-ce kubelet kubeadm kubectl
 ```
 

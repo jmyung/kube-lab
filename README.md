@@ -7,6 +7,7 @@
 ## 1. 컨테이너 맛보기
 
 - [Lab-01](./doc/Lab-01.md)
+- [Lab-07](https://github.com/jmyung/jmyung.github.io/blob/master/_posts/2019-03-03-creating-effective-docker-images.md)
 
 ## 2. 클러스터 설치
 - [Lab-04](./doc/Lab-04.md)
@@ -26,7 +27,7 @@
 
 ## 4. CI / CD
 #### 4-1. Jenkins
-- [Lab-07](./doc/Lab-07.md)
+- [Lab-08](./doc/Lab-08.md)
 #### 4-2. Spinnaker
 #### 4-3. Istio
 
