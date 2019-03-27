@@ -2,6 +2,9 @@
 
 본 랩에서는 젠킨스 CI/CD 에 대해 알아보겠습니다.
 
+[![01](https://d3c33hcgiwev3.cloudfront.net/imageAssetProxy.v1/fpu5WcJ7EeeTjA6ickjFzg_9407ed76e8e600e18823c4fb2f447014_be63fceff398c605.png?expiry=1553817600000&hmac=rf-KVTlie77ObBpTtkLPBqfPfnkxe2nI3WRkz2hCdJ8)]()
+
+
 ## 1. GCP API 확인
 
 - Kubernetes Engine API : Enable
