@@ -154,6 +154,8 @@ sudo swapoff -a
 sudo vi /etc/fstab
 ```
 
+/root/swap 주석처리 (앞에 # 붙임)
+
 ## 3. 도커 설치 및 설치 레파지토리 추가
 
 ### 3-1. 도커 설치 및 기동 (3개 서버 모두)
