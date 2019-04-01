@@ -13,6 +13,8 @@
 
 - 참고 : https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
 
+# 쿠버네티스 클러스터 설치 (ubuntu)
+
 ## 1. VM 생성
 
 한 개의 마스터와 두개의 워커로 사용될 AWS EC2 서버를 띄워 보겠습니다.
@@ -135,6 +137,98 @@ sudo kubeadm join $controller_private_ip:6443 --token $token --discovery-token-c
 ```
 
 ### 3-7. 노드 조회
+```sh
+kubectl get nodes
+```
+
+# 쿠버네티스 클러스터 설치 (centos)
+
+## 1. VM 생성
+
+한 개의 마스터와 두개의 워커로 사용될 GCP 인스턴스를 띄웁니다.
+
+## 2. 모든 서버에서 SWAP OFf
+
+```sh
+sudo swapoff -a
+sudo vi /etc/fstab
+```
+
+## 3. 도커 설치 및 설치 레파지토리 추가
+
+### 3-1. 도커 설치 및 기동 (3개 서버 모두)
+```sh
+sudo yum -y install docker
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+### 3-2. 쿠버네티스 레파지토리 추가 (3개 서버 모두)
+```sh
+cat << EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+```
+
+## 4. selinux 끄기
+
+```sh
+sudo setenforce 0
+sudo vi /etc/selinux/config
+```
+`SELINUX=enforcing` 에서 `SELINUX=permissive` 으로 수정
+
+
+## 5. 쿠버네티스 클러스터 설치
+
+Kubeadm, Kubelet, Kubectl 설치
+
+```sh
+sudo yum install -y kubelet kubeadm kubectl
+sudo systemctl enable kubelet
+sudo systemctl start kubelet
+```
+
+## 6. sysctl 구성
+
+```sh
+cat << EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+sudo sysctl --system
+```
+
+### 7. 클러스터 초기화 (마스터노드만)
+
+```sh
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+### 8. kubectl 구성 (마스터노드만)
+
+참고 : https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/#pod-network
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
+```
+
+### 9. 워커 노드 부트스트래핑
+```sh
+sudo kubeadm join $controller_private_ip:6443 --token $token --discovery-token-ca-cert-hash $hash
+```
+
+### 10. 노드 조회
 ```sh
 kubectl get nodes
 ```
