@@ -20,6 +20,7 @@
 - [Lab-05](./doc/Lab-05.md)
 - [Lab-06](./doc/Lab-06.md)
 #### 3-3. Service
+- [Lab-10](./doc/Lab-10.md)
 #### 3-4. DaemonSet
 #### 3-5. Job
 #### 3-6. ConfigMap
