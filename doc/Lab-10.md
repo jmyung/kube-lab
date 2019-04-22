@@ -2,45 +2,7 @@
 
 본 랩에서는 `쿠버네티스 서비스`에 대해 알아보겠습니다.
 
-
-## 1.
-
-- ClusterIp
-- NodePort
-- LoadBalancer
-
-
-## 2.
-
-- 명령형
-```sh
-kubectl run nginx --image=nginx
-```
-
-- 선언형
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-  labels:
-    app: nginx
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx
-...
-```
-
-## 3. 기억해야 할 것
-
-- 컨테이너를 파드 내에서 동작. 어플리케이션을 대표하는 가장 간단한 쿠버네티스 오브젝트
-- 파드는 보통 디플로이먼트에 의해 관리됨
-- 서비스는 디플로이먼트를 노출(expose)시킴
-- 서드파티 벤더(GCP, AWS 등)는 로드밸런싱 서비스타입을 제공
-
-## 4. 인바인드 노드 포트 요구사항
+## 1. 인바인드 노드 포트
 
 - Master Node:
   - TCP 6443 : Kubernetes API Server
@@ -54,19 +16,131 @@ spec:
   - TCP 10255 : Read-only Kubelet API
   - TCP 30000~32767 : NodePort Services
 
-## 5.
+## 2. 서비스 타입
 
-```sh
-kubectl get pods -o wide
-kubectl get deployments
-kubectl get deployment webhead --type="NodePort" --port 80 # 외부에서 접근할 수 있도록 서비스를 노출
-kubectl get services
-curl localhost:32516 # 모든 노드의 32516 포트로 포트매핑
-```
+- 서비스
+  - 컨테이너를 파드 내에서 동작. 어플리케이션을 대표하는 가장 간단한 쿠버네티스 오브젝트
+  - 파드는 보통 디플로이먼트에 의해 관리됨
+  - 서비스는 디플로이먼트를 노출(expose)시킴
+  - 서드파티 벤더(GCP, AWS 등)는 로드밸런싱 서비스타입을 제공
+
+애플리케이션의 일부 (예 : 프론트 엔드)의 경우 외부 (클러스터 외부) IP 주소로 서비스를 노출 할 수 있습니다.
 
 - kubeproxy : 클러스터의 모든 노드에 존재. 노드 포트로 들어온 트래픽을 클러스터 내의 적절한 파드로 리다이렉팅
-- NodePort : 모든 노드의 3만번 포트로 포트매핑
 - ClusterIp : internal LoadBalancer. 트래픽을 내부 pod ip에 전달한다
+- NodePort : 모든 노드의 3만번 포트로 포트매핑
+- LoadBalancer :
 
 
-## 6. Ingress
+## 3. Deployment
+
+- GKE 클러스터 올리기
+```sh
+gcloud config set compute/zone us-central1-a
+gcloud container clusters create lab10 --num-nodes 3 --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw"
+```
+
+- 명령형
+```sh
+kubectl run nginx --image=nginx:1.7.9 --replicas=3
+```
+
+- 선언형
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+```
+
+- nginx에 요청
+```sh
+k run -it alpine --image=alpine -- sh
+# apk add curl
+# ???
+```
+
+## 4. ClusterIp
+
+[![01](https://d33wubrfki0l68.cloudfront.net/27b2978647a8d7bdc2a96b213f0c0d3242ef9ce0/e8c9b/images/docs/services-iptables-overview.svg?raw=true)]()
+
+
+```yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: nginx-pod
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 80
+```
+
+또는
+
+```sh
+kubectl expose deployment nginx-deployment --port=8080 --target-port=80
+```
+
+```
+selector:
+  app: nginx-pod
+```
+`selector`가 없는 경우에는 endpoint를 직접 만들어줘야합니다.
+참고 : https://kubernetes.io/docs/concepts/services-networking/service/#services-without-selectors
+
+```sh
+sed -i 's/Thank/Thank1/g' /usr/share/nginx/html/index.html
+```
+
+## 5. NodePort
+
+```sh
+$ kubectl edit svc my-service # type: NodePort 로 변경
+service/my-service edited
+```
+
+```sh
+$ k get svc
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+kubernetes   ClusterIP   10.27.240.1     <none>        443/TCP          1h
+my-service   NodePort    10.27.242.221   <none>        8080:30755/TCP   13m
+```
+
+GKE 에서 NodePort 테스트 해보기
+
+## 6. LoadBalancer
+
+```sh
+$ kubectl edit svc my-service # type: LoadBalancer 로 변경
+service/my-service edited
+```
+
+```sh
+$ k get svc
+NAME         TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+kubernetes   ClusterIP      10.27.240.1     <none>        443/TCP          1h
+my-service   LoadBalancer   10.27.242.221   <pending>     8080:30755/TCP   22m
+```
+
+## 7. 문제
