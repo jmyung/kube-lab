@@ -10,7 +10,9 @@
 - [Lab-07](https://github.com/jmyung/jmyung.github.io/blob/master/_posts/2019-03-03-creating-effective-docker-images.md)
 
 ## 2. 클러스터 설치
-- [Lab-04](./doc/Lab-04.md)
+- 싱글 마스터 클러스터 구성 : [Lab-04](./doc/Lab-04.md)
+- HA 마스터 클러스터 구성 : [Lab-11](./doc/Lab-11.md)
+- non-kubeadm 구성 : [쿠버네티스 하드웨이](https://github.com/jmyung/kubernetes-the-hard-way-modified)
 
 ## 3. Kubectl
 #### 3-1. Pod
