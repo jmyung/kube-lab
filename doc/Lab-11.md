@@ -1,9 +1,12 @@
 # HA 마스터 클러스터 구성
 
 본 랩에서는 `HA 마스터 클러스터 구성`에 대해 알아보겠습니다.
-- 참고 : [Creating Highly Available clusters with kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/)
+- 참고 : [kubeadm을 이용한 고가용성 클러스터 생성](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/)
 
 ## 1. 준비 : VM 띄우기
+
+본 랩에서는 GCP에서 VM을 띄웁니다. 환경 정보 설정 및 접속 명령어는 GCP 명령어를 따르나, 쿠버네티스 설치를 위한 기본 명령어는 임의의 환경에서 동작합니다.
+따라서, 베어메탈, AWS, VMWARE 등을 활용하여 VM을 띄우셔도 상관없습니다.
 
 ### 1-1. 프로젝트 생성
 
@@ -35,18 +38,14 @@ PROJECT_ID="프로젝트ID"
 
 - **config-update.sh** 생성
 ```sh
-mkdir setup
-cd setup
-vi config-update.sh
-```
-- 내용
-```sh
-PROJECT_ID="프로젝트ID"
+cat << EOF | tee config-update.sh
 gcloud config set project ${PROJECT_ID}
 gcloud config set compute/region us-west2
 gcloud config set compute/zone us-west2-c
+EOF
 ```
-- 저장후
+
+- 실행권한 부여
 ```sh
 chmod +x config-update.sh
 ```
@@ -140,7 +139,7 @@ gcloud compute addresses list --filter="name=('k8s-ha-lab')"
 - 정적 IP를 로드밸런서 VM에 붙이기
 ```sh
 gcloud compute instances delete-access-config load-balancer --access-config-name "external-nat"
-gcloud compute instances add-access-config load-balancer --access-config-name "external-nat" --address [바로위에 확인된 IP 기입]
+gcloud compute instances add-access-config load-balancer --access-config-name "external-nat" --address {바로위에 확인된 IP 기입}
 ```
 
 #### 1-3-5. 생성된 VM 확인
@@ -149,6 +148,7 @@ gcloud compute instances add-access-config load-balancer --access-config-name "e
 gcloud compute instances list
 ```
 - VM 개수
+
 | VM  | 컨트롤러 | 워커 | 로드밸런서 |
 | --- | ------ | -- | -------- |
 | 개수 | 3      | 3  | 1        |
@@ -225,45 +225,53 @@ sudo nginx -s reload
 
 ### 3-1. 첫번째 컨트롤 플레인 노드 구성
 
+#### 3-1-1. controller-0 VM 접속
+```sh
 gcloud compute ssh controller-0
-
-- LOAD_BALANCER_DNS={로드밸런서 IP주소}
-- LOAD_BALANCER_PORT=6443
-
-- **kubeadm-config.yaml** 파일 생성
-```
-apiVersion: kubeadm.k8s.io/v1beta2
-kind: ClusterConfiguration
-kubernetesVersion: stable
-controlPlaneEndpoint: "LOAD_BALANCER_DNS:LOAD_BALANCER_PORT"
 ```
 
+#### 3-1-2. 클러스터 구성에 필요한 쿠버네티스 및 도커 바이너리 설치
+- **대상 :**  kubelet, kubeadm, kubectl, docker
 ```
 {
-sudo apt-get update && sudo apt-get install -y apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
-sudo apt-get update
-sudo apt-get install -y kubelet kubeadm kubectl
-sudo apt-mark hold kubelet kubeadm kubectl
-sudo apt install docker.io -y
+    sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    deb https://apt.kubernetes.io/ kubernetes-xenial main
+    EOF
+    sudo apt-get update
+    sudo apt-get install -y kubelet kubeadm kubectl
+    sudo apt-mark hold kubelet kubeadm kubectl
+    sudo apt install docker.io -y
 }
 ```
 
 
+
+#### 3-1-3. 첫번째 컨트롤 플레인 초기화
+
+- kubeadm 구성 파일 생성
+  - API 서버로 활용될 LB의 환경 변수 설정
+    - **LOAD_BALANCER_DNS** : {로드밸런서_정적IP주소}
+    - **LOAD_BALANCER_PORT** : 6443
+  - **kubeadm-config.yaml** 파일 생성
+```sh
+cat << EOF | tee ~/kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: stable
+controlPlaneEndpoint: ${LOAD_BALANCER_DNS}:${LOAD_BALANCER_PORT}
+EOF
+```
+
 - 컨트롤 플레인 초기화
-```
+```sh
 sudo kubeadm init --config=kubeadm-config.yaml --upload-certs
-또는
-sudo kubeadm init --config=kubeadm-config.yaml --upload-certs --ignore-preflight-errors=NumCPU
 ```
+> 생성된 VM의 CPU 코어 부족으로 뒤에 --ignore-preflight-errors=NumCPU 를 붙여줘야할 수도 있습니다.
 
-
-
-
-```
+  - 실행 예
+```sh
 jesang_myung2@controller-0:~$ sudo kubeadm init --config=kubeadm-config.yaml --upload-certs --ignore-preflight-errors=NumCPU
 [init] Using Kubernetes version: v1.15.3
 [preflight] Running pre-flight checks
@@ -273,7 +281,6 @@ jesang_myung2@controller-0:~$ sudo kubeadm init --config=kubeadm-config.yaml --u
 [preflight] Pulling images required for setting up a Kubernetes cluster
 [preflight] This might take a minute or two, depending on the speed of your internet connection
 [preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
-
 [kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
 [kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
 [kubelet-start] Activating the kubelet service
@@ -319,45 +326,69 @@ d3dcf77134564d71eb6cb52b05362bf2b0aeed79b5dacb195345f17e5b2c8db3
 [bootstrap-token] Creating the "cluster-info" ConfigMap in the "kube-public" namespace
 [addons] Applied essential addon: CoreDNS
 [addons] Applied essential addon: kube-proxy
-
 Your Kubernetes control-plane has initialized successfully!
-
 To start using your cluster, you need to run the following as a regular user:
-
   mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
 You should now deploy a pod network to the cluster.
 Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
   https://kubernetes.io/docs/concepts/cluster-administration/addons/
-
 You can now join any number of the control-plane node running the following command on each as root:
-
   kubeadm join 34.94.10.36:6443 --token gq3lgh.za2a78q3luhq39om \
     --discovery-token-ca-cert-hash sha256:ac86400dee49e7610ab759915a7d52afb0656b45b7e9d0bd6f9614968644f788 \
     --control-plane --certificate-key d3dcf77134564d71eb6cb52b05362bf2b0aeed79b5dacb195345f17e5b2c8db3
-
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
 As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
 "kubeadm init phase upload-certs --upload-certs" to reload certs afterward.
-
 Then you can join any number of worker nodes by running the following on each as root:
-
 kubeadm join 34.94.10.36:6443 --token gq3lgh.za2a78q3luhq39om \
     --discovery-token-ca-cert-hash sha256:ac86400dee49e7610ab759915a7d52afb0656b45b7e9d0bd6f9614968644f788
 ```
+kubeadm join 명령어 두곳을 잘 복사해 둡니다.
 
-
-- gcloud compute ssh controller-1, gcloud compute ssh controller-2
-
+- admin용 kubeconfig 파일 복사
+```sh
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
+
+
+### 3-2. 나머지 컨트롤 플레인 부트스트래핑
+
+#### 3-2-1. controller-1, 2 VM 접속
+- 1,2번 컨트롤 플레인을 0번에 부트스트래핑하기 위해, 먼저 1,2번 VM에 접속합니다.
+```sh
+gcloud compute ssh controller-1
+```
+
+#### 3-2-2. 클러스터 구성에 필요한 쿠버네티스 및 도커 바이너리 설치
+- **대상 :**  kubelet, kubeadm, kubectl, docker
+```sh
+{
+    sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    deb https://apt.kubernetes.io/ kubernetes-xenial main
+    EOF
+    sudo apt-get update
+    sudo apt-get install -y kubelet kubeadm kubectl
+    sudo apt-mark hold kubelet kubeadm kubectl
+    sudo apt install docker.io -y
+}
+```
+
+#### 3-2-3. 컨트롤 플레인 부트스트래핑
+
+- 위에서 복사해둔 명령어를 실행합니다.
+```sh
 sudo kubeadm join 34.94.10.36:6443 --token gq3lgh.za2a78q3luhq39om \
     --discovery-token-ca-cert-hash sha256:ac86400dee49e7610ab759915a7d52afb0656b45b7e9d0bd6f9614968644f788 \
     --control-plane --certificate-key d3dcf77134564d71eb6cb52b05362bf2b0aeed79b5dacb195345f17e5b2c8db3 \
     --ignore-preflight-errors=NumCPU
 ```
-
+  - 실행 예
 
 ```
 [preflight] Running pre-flight checks
@@ -405,81 +436,95 @@ sudo kubeadm join 34.94.10.36:6443 --token gq3lgh.za2a78q3luhq39om \
 [upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
 [mark-control-plane] Marking the node controller-1 as control-plane by adding the label "node-role.kubernetes.io/master=''"
 [mark-control-plane] Marking the node controller-1 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
-
 This node has joined the cluster and a new control plane instance was created:
-
 * Certificate signing request was sent to apiserver and approval was received.
 * The Kubelet was informed of the new secure connection details.
 * Control plane (master) label and taint were applied to the new node.
 * The Kubernetes control plane instances scaled up.
 * A new etcd member was added to the local/stacked etcd cluster.
-
 To start administering your cluster from this node, you need to run the following as a regular user:
-
 	mkdir -p $HOME/.kube
 	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 	sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
 Run 'kubectl get nodes' to see this node join the cluster.
 ```
 
+> controller-2 에서도 동일하게 수행합니다.
+
+#### 3-2-4. 마스터 노드 확인
+- 확인
+```sh
 jesang_myung2@controller-2:~$ kubectl get no
 NAME           STATUS     ROLES    AGE   VERSION
 controller-0   NotReady   master   10m   v1.15.3
 controller-1   NotReady   master   84s   v1.15.3
 controller-2   NotReady   master   41s   v1.15.3
+```
+
+- CNI 플러그인 설치
+NotReady를 Ready상태로 만들기 위해 CNI 플러그인을 설치합니다.
+```sh
+kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+```
+
+- 확인
+jesang_myung2@controller-0:~$ kubectl get no
+NAME           STATUS   ROLES    AGE     VERSION
+controller-0   Ready    master   21m     v1.15.3
+controller-1   Ready    master   11m     v1.15.3
+controller-2   Ready    master   11m     v1.15.3
 
 
-- WOKER
+### 3-3. 워커 노드 설치
 
+#### 3-3-1. 클러스터 구성에 필요한 쿠버네티스 및 도커 바이너리 설치
+- **대상 :**  kubelet, kubeadm, docker
+```sh
 sudo apt-get update && sudo apt-get install -y apt-transport-https curl
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 sudo apt-get update
-sudo apt-get install -y kubelet kubeadm kubectl
-sudo apt-mark hold kubelet kubeadm kubectl
+sudo apt-get install -y kubelet kubeadm
+sudo apt-mark hold kubelet kubeadm\
+```
 
-
+- ip_forward 설정
+```sh
 echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 sudo modprobe br_netfilter
-
 echo '1' > sudo tee /proc/sys/net/ipv4/ip_forward
+```
 
-
-
+#### 3-3-2. 워커 노드 조인
+- 위에서 복사해둔 명령어를 실행합니다.
+```sh
 sudo kubeadm join 34.94.10.36:6443 --token gq3lgh.za2a78q3luhq39om \
     --discovery-token-ca-cert-hash sha256:ac86400dee49e7610ab759915a7d52afb0656b45b7e9d0bd6f9614968644f788 \
     --ignore-preflight-errors=NumCPU
-
-
-    jesang_myung2@controller-0:~$ kubectl get no
-    NAME           STATUS     ROLES    AGE     VERSION
-    controller-0   NotReady   master   27m     v1.15.3
-    controller-1   NotReady   master   18m     v1.15.3
-    controller-2   NotReady   master   17m     v1.15.3
-    worker-0       NotReady   <none>   2m10s   v1.15.3
-    worker-1       NotReady   <none>   2m10s   v1.15.3
-    worker-2       NotReady   <none>   2m11s   v1.15.3
-
-
-
-
-    jesang_myung2@controller-0:~$ kubectl get no
-    NAME           STATUS   ROLES    AGE     VERSION
-    controller-0   Ready    master   29m     v1.15.3
-    controller-1   Ready    master   19m     v1.15.3
-    controller-2   Ready    master   19m     v1.15.3
-    worker-0       Ready    <none>   3m49s   v1.15.3
-    worker-1       Ready    <none>   3m49s   v1.15.3
-    worker-2       Ready    <none>   3m50s   v1.15.3
-
-
 ```
-controllers/nginx-deployment.yaml
 
+- 확인
+```sh
+jesang_myung2@controller-0:~$ kubectl get no
+NAME           STATUS   ROLES    AGE     VERSION
+controller-0   Ready    master   29m     v1.15.3
+controller-1   Ready    master   19m     v1.15.3
+controller-2   Ready    master   19m     v1.15.3
+worker-0       Ready    <none>   3m49s   v1.15.3
+worker-1       Ready    <none>   3m49s   v1.15.3
+worker-2       Ready    <none>   3m50s   v1.15.3
+```
+
+## 4. 스모크 테스트
+
+구성한 클러스터가 잘 작동하는지 확인해 보겠습니다.
+
+- 디플로이먼트 수행
+```sh
+cat << EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -501,12 +546,42 @@ spec:
         image: nginx:1.7.9
         ports:
         - containerPort: 80
+EOF
 ```
 
+- 서비스 실행 (NodePort)
+```sh
+kubectl expose deploy/nginx-deployment --type=NodePort
+```
 
-    jesang_myung2@controller-0:~$ k expose deploy/nginx-deployment --type=NodePort
-  service/nginx-deployment exposed
+- 서비스 확인
+```sh
   jesang_myung2@controller-0:~$ k get svc
   NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
   kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP        40m
   nginx-deployment   NodePort    10.102.234.90   <none>        80:30552/TCP   3s
+```
+
+
+- 브라우저에서 확인
+```
+주소창에 http://{VM_PUBLIC_IP}:{NodePort}
+```
+여기서 할당받은 NodePort는 30552
+
+## 5. 프로젝트 클린
+
+- VM 삭제
+```sh
+for instance in controller-0 controller-1 load-balancer worker-0 worker-1 ; do
+  gcloud compute instances delete ${instance}
+done
+```
+
+- 할당받은 정적 IP 삭제
+```sh
+gcloud compute addresses delete k8s-ha-lab \
+  --region $(gcloud config get-value compute/region)
+```
+
+> 또는, GCP 웹콘솔에서 프로젝트를 삭제하면 프로젝트 내에 속한 자원들도 모두 자동으로 삭제됩니다.
