@@ -3,7 +3,14 @@
 본 랩에서는 `HA 마스터 클러스터 구성`에 대해 알아보겠습니다.
 - 참고 : [kubeadm을 이용한 고가용성 클러스터 생성](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/)
 
-## 1. 준비 : VM 띄우기
+## 순서
+
+1. [Prerequisite](#1-prerequisite--vm-프로비저닝)
+2. [로드 밸런서 설정](#2-로드-밸런서-설정)
+3. [클러스터 구성](#3-클러스터-구성)
+4. [스모크 테스트](#4-스모크-테스트)
+
+## 1. Prerequisite : VM 프로비저닝
 
 본 랩에서는 GCP에서 VM을 띄웁니다. 환경 정보 설정 및 접속 명령어는 GCP 명령어를 따르나, 쿠버네티스 설치를 위한 기본 명령어는 임의의 환경에서 동작합니다.
 따라서, 베어메탈, AWS, VMWARE 등을 활용하여 VM을 띄우셔도 상관없습니다.
