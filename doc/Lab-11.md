@@ -238,14 +238,18 @@ gcloud compute ssh controller-0
 ```
 
 #### 3-1-2. 클러스터 구성에 필요한 쿠버네티스 및 도커 바이너리 설치
-- **대상 :**  kubelet, kubeadm, kubectl, docker
+- **대상 :**  kubelet, kubeadm, docker
+```sh
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
 ```
+```sh
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+```
+```sh
 {
-    sudo apt-get update && sudo apt-get install -y apt-transport-https curl
     curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-    cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
-    deb https://apt.kubernetes.io/ kubernetes-xenial main
-    EOF
     sudo apt-get update
     sudo apt-get install -y kubelet kubeadm kubectl
     sudo apt-mark hold kubelet kubeadm kubectl
@@ -253,14 +257,22 @@ gcloud compute ssh controller-0
 }
 ```
 
-
+- ip_forward 설정
+```sh
+{
+    echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -p
+    sudo modprobe br_netfilter
+    echo '1' | sudo tee /proc/sys/net/ipv4/ip_forward
+}
+```
 
 #### 3-1-3. 첫번째 컨트롤 플레인 초기화
 
 - kubeadm 구성 파일 생성
   - API 서버로 활용될 LB의 환경 변수 설정
-    - **LOAD_BALANCER_DNS** : {로드밸런서_정적IP주소}
-    - **LOAD_BALANCER_PORT** : 6443
+    - **LOAD_BALANCER_DNS**={로드밸런서_정적IP주소}
+    - **LOAD_BALANCER_PORT**=6443
   - **kubeadm-config.yaml** 파일 생성
 ```sh
 cat << EOF | tee ~/kubeadm-config.yaml
@@ -371,18 +383,32 @@ gcloud compute ssh controller-1
 ```
 
 #### 3-2-2. 클러스터 구성에 필요한 쿠버네티스 및 도커 바이너리 설치
-- **대상 :**  kubelet, kubeadm, kubectl, docker
+- **대상 :**  kubelet, kubeadm, docker
+```sh
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+```
+```sh
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+```
 ```sh
 {
-    sudo apt-get update && sudo apt-get install -y apt-transport-https curl
     curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-    cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
-    deb https://apt.kubernetes.io/ kubernetes-xenial main
-    EOF
     sudo apt-get update
     sudo apt-get install -y kubelet kubeadm kubectl
     sudo apt-mark hold kubelet kubeadm kubectl
     sudo apt install docker.io -y
+}
+```
+
+- ip_forward 설정
+```sh
+{
+    echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -p
+    sudo modprobe br_netfilter
+    echo '1' | sudo tee /proc/sys/net/ipv4/ip_forward
 }
 ```
 
@@ -488,21 +514,30 @@ controller-2   Ready    master   11m     v1.15.3
 - **대상 :**  kubelet, kubeadm, docker
 ```sh
 sudo apt-get update && sudo apt-get install -y apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+```
+```sh
 cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
-sudo apt-get update
-sudo apt-get install -y kubelet kubeadm
-sudo apt-mark hold kubelet kubeadm\
+```
+```sh
+{
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    sudo apt-get update
+    sudo apt-get install -y kubelet kubeadm
+    sudo apt-mark hold kubelet kubeadm
+    sudo apt install docker.io -y
+}
 ```
 
 - ip_forward 설정
 ```sh
-echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
-sudo sysctl -p
-sudo modprobe br_netfilter
-echo '1' > sudo tee /proc/sys/net/ipv4/ip_forward
+{
+    echo "net.bridge.bridge-nf-call-iptables=1" | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -p
+    sudo modprobe br_netfilter
+    echo '1' | sudo tee /proc/sys/net/ipv4/ip_forward
+}
 ```
 
 #### 3-3-2. 워커 노드 조인
@@ -530,8 +565,8 @@ worker-2       Ready    <none>   3m50s   v1.15.3
 구성한 클러스터가 잘 작동하는지 확인해 보겠습니다.
 
 - 디플로이먼트 수행
-```sh
-cat << EOF | kubectl apply -f -
+```yaml
+cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
