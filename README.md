@@ -39,7 +39,12 @@
 
 ## 6. Monitoring and Logging
 
-## 7. 미니 프로젝트
+## 7. Serverless on k8s
+- [Lab-serverless](./doc/Lab-serverless.md)
+
+## 8. 미니 프로젝트
  - popular movie store
 
-## 8. CKA 대비 기출풀이
+## 9. CKA 대비 기출풀이
+
+## 10. CKAD 대비 기출풀이
