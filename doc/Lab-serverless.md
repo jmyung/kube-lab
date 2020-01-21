@@ -51,7 +51,7 @@ kubectl apply -f https://raw.githubusercontent.com/nuclio/nuclio/master/hack/k8s
 
 ### 2-5. 포트포워딩
 ```sh
-kubectl port-forward --address 0.0.0.0 -n nuclio $(kubectl get pods -n nuclio -l nuclio.io/app=dashboard -o jsonpath='{.items[0].metadata.name}') 8070:8070
+kubectl port-forward --address 0.0.0.0 -n nuclio $(kubectl get pods -n nuclio -l nuclio.io/app=dashboard -o jsonpath='{.items[0].metadata.name}') 8070:8070 &
 ```
 > --address 0.0.0.0 를 붙여야 public ip 접속가능
 
@@ -113,30 +113,37 @@ chmod +x nuctl
 mv nuctl /usr/local/bin/
 ```
 
-### 4-2. 펑션 작성
+### 4-2. **파드 목록 호출** 펑션 작성
 - 파일명 : my_function.py
+
 ```py
+from kubernetes import client, config
 import os
+
 def my_entry_point(context, event):
-        # use the logger, outputting the event body
         context.logger.info_with('Got invoked',
                 trigger_kind=event.trigger.kind,
                 event_body=event.body,
                 some_env=os.environ.get('MY_ENV_VALUE'))
 
-        # check if the event came from cron
         if event.trigger.kind == 'nats':
-
-                # log something
-                context.logger.info('Invoked from nats')
-
+            config.load_kube_config()
+            v1=client.CoreV1Api()
+            print("Listing pods with their IPs:")
+            ret = v1.list_pod_for_all_namespaces(watch=False)
+            for i in ret.items:
+                print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
         else:
-
-                # return a response
-                return 'A string response'
+            return 'It wasnt invoked from nats'
 ```
 
 ### 4-3. 배포 yaml 정의
+
+- secret
+```
+kubectl create secret generic kconfig --from-file=.kube/config -n nuclio
+```
+
 - 파일명 : function.yaml
 ```yaml
 apiVersion: "nuclio.io/v1"
@@ -149,13 +156,24 @@ spec:
   - name: MY_ENV_VALUE
     value: my value
   handler: my_function:my_entry_point
-  runtime: python:2.7
+  runtime: python:3.6
+  build:
+    commands:
+    - pip3.6 install kubernetes
   triggers:
     myNatsTopic:
       kind: "nats"
       url: "nats://{NATS서버 IP}:4222"
       attributes:
         "topic": "metrics-queue"
+  volumes:
+  - volume:
+      name: "config"
+      secret:
+        secretName: "kconfig"
+    volumeMount:
+      name: "config"
+      mountPath: "/root/.kube"
 ```
 
 ### 4-4. 펑션 배포
@@ -195,32 +213,23 @@ kubectl logs my-function-7557f4cf7d-9mstp -n nuclio -f
 ```sh
 ...
 ...
-20.01.10 08:13:54.129 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "97129481-0e33-4611-b30a-a16c038f3596"}
-20.01.10 08:13:54.130 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:13:54.130 rocessor.nats.myNatsTopic (I) Got invoked {"trigger_kind": "nats", "some_env": "myung value", "event_body": "\"{\\\"id\\\":\\\"19fbb055-b33d-448d-aa4e-414ea6dd5108\\\",\\\"cpuPercentage\\\":0.15,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":627.0}\""}
-20.01.10 08:13:54.130 rocessor.nats.myNatsTopic (I) Invoked from nats
-20.01.10 08:13:55.130 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "502056d9-d58a-4354-9a81-54a8343b0b8c"}
-20.01.10 08:13:55.130 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:13:55.130 rocessor.nats.myNatsTopic (I) Got invoked {"trigger_kind": "nats", "some_env": "myung value", "event_body": "\"{\\\"id\\\":\\\"dc457721-692e-4d09-8ab7-b22f63fe01a6\\\",\\\"cpuPercentage\\\":0.16,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":627.0}\""}
-20.01.10 08:13:55.131 rocessor.nats.myNatsTopic (I) Invoked from nats
-20.01.10 08:13:56.130 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "d77998f4-6339-482d-8323-583742ae0d47"}
-20.01.10 08:13:56.130 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:13:56.131 rocessor.nats.myNatsTopic (I) Got invoked {"event_body": "\"{\\\"id\\\":\\\"c1c32c55-0d99-47b5-a67e-f4576a85925f\\\",\\\"cpuPercentage\\\":0.17,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":627.0}\"", "trigger_kind": "nats", "some_env": "myung value"}
-20.01.10 08:13:56.131 rocessor.nats.myNatsTopic (I) Invoked from nats
-20.01.10 08:13:57.130 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "fbabc894-414f-483b-87d2-30e69ff5d56a"}
-20.01.10 08:13:57.130 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:13:57.131 rocessor.nats.myNatsTopic (I) Got invoked {"trigger_kind": "nats", "some_env": "myung value", "event_body": "\"{\\\"id\\\":\\\"c07e0f55-21c1-4ddc-92fe-7263e109df80\\\",\\\"cpuPercentage\\\":0.16,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":627.0}\""}
-20.01.10 08:13:57.132 rocessor.nats.myNatsTopic (I) Invoked from nats
-20.01.10 08:13:58.129 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "d6a17bd3-ac1b-4064-8b3a-7d793b656b01"}
-20.01.10 08:13:58.129 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:13:58.130 rocessor.nats.myNatsTopic (I) Got invoked {"trigger_kind": "nats", "some_env": "myung value", "event_body": "\"{\\\"id\\\":\\\"ec664504-deb5-428f-accb-d3accf5dd4a5\\\",\\\"cpuPercentage\\\":0.17,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":626.0}\""}
-20.01.10 08:13:58.130 rocessor.nats.myNatsTopic (I) Invoked from nats
-20.01.10 08:13:59.130 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "3ce73e67-ca19-456e-8a3c-a6b91a7c1a01"}
-20.01.10 08:13:59.130 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:13:59.131 rocessor.nats.myNatsTopic (I) Got invoked {"trigger_kind": "nats", "some_env": "myung value", "event_body": "\"{\\\"id\\\":\\\"69d0bdc3-4913-4f17-8e47-9ce67e33a1da\\\",\\\"cpuPercentage\\\":0.17,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":626.0}\""}
-20.01.10 08:13:59.131 rocessor.nats.myNatsTopic (I) Invoked from nats
-20.01.10 08:14:00.130 sor.nats.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "9c47096b-6081-45ba-92de-5136aef48ce1"}
-20.01.10 08:14:00.130 sor.nats.w0.python.logger (D) Sending event to wrapper {"size": 134}
-20.01.10 08:14:00.131 rocessor.nats.myNatsTopic (I) Got invoked {"event_body": "\"{\\\"id\\\":\\\"c0c7ddf1-e371-4a76-b9ed-d1ba170cfc14\\\",\\\"cpuPercentage\\\":0.17,\\\"totalPhysicalMemory\\\":1962.0,\\\"freePhysicalMemory\\\":626.0}\"", "trigger_kind": "nats", "some_env": "myung value"}
-20.01.10 08:14:00.131 rocessor.nats.myNatsTopic (I) Invoked from nats
+Listing pods with their IPs:
+10.244.0.126    default mypod2
+10.244.0.129    default mypod3
+10.244.0.127    default mypod5
+10.244.0.128    kube-system     coredns-bf7759867-mksn8
+10.244.0.124    kube-system     coredns-bf7759867-vv6hj
+172.31.32.81    kube-system     etcd-sdspaas1c.mylabserver.com
+172.31.32.81    kube-system     kube-apiserver-sdspaas1c.mylabserver.com
+172.31.32.81    kube-system     kube-controller-manager-sdspaas1c.mylabserver.com
+172.31.32.81    kube-system     kube-flannel-ds-amd64-8tdtc
+172.31.32.81    kube-system     kube-proxy-zqz8b
+172.31.32.81    kube-system     kube-scheduler-sdspaas1c.mylabserver.com
+10.244.0.130    nuclio  my-function-7557f4cf7d-9mstp
+10.244.0.131    nuclio  nuclio-controller-7c77d68cb9-22zth
+10.244.0.132    nuclio  nuclio-dashboard-54d5f44b4d-8t7xm
+20.01.21 08:12:41.677 sor.http.w0.python.logger (D) Processing event {"name": "my-function", "version": -1, "eventID": "d9d5ce74-b081-4703-a496-14a7dfb6ddd4"}
+20.01.21 08:12:41.677 sor.http.w0.python.logger (D) Sending event to wrapper {"size": 0}
+20.01.21 08:12:41.678            processor.http (W) 'NoneType' object has no attribute 'decode'
+20.01.21 08:12:41.678            processor.http (I) Got invoked {"some_env": "myung value", "trigger_kind": "http", "event_body": null}
  ```
