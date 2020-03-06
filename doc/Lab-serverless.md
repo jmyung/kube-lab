@@ -233,3 +233,35 @@ Listing pods with their IPs:
 20.01.21 08:12:41.678            processor.http (W) 'NoneType' object has no attribute 'decode'
 20.01.21 08:12:41.678            processor.http (I) Got invoked {"some_env": "myung value", "trigger_kind": "http", "event_body": null}
  ```
+
+
+
+
+### 기타 명령
+
+```sh
+nuctl deploy nuclio-function-test -n nuclio \
+    --path ./StartJobHandler.java \
+    --onbuild-image quay.io/nuclio/handler-builder-java-onbuild:1.1.30-amd64 \
+    --file ./function-build.yaml \
+    --runtime java \
+    --handler StartJobHandler \
+    --no-pull \
+    --verbose \
+    --offline \
+    --registry docker.io/human537 \
+    --triggers '{"myNatsTopic": {"kind": "nats", "maxWorkers": 1, "url": "nats://172.17.0.3:4222", "attributes": {"topic": "startJob", "queueName": "a-batch"}}}'
+```
+
+
+```sh
+nuctl invoke java-nats -n nuclio
+```
+
+
+---------------------------------
+
+### NUCLIO FUNCTION 설정
+maven {url 'http://13.126.46.165:8081/repository/maven-releases/'}
+group: 'io.kubernetes', name: 'client-java', version: '4.0.0'
+http://13.126.46.165:8081/repository/maven-releases/

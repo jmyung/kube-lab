@@ -23,10 +23,12 @@
 - [Lab-06](./doc/Lab-06.md)
 #### 3-3. Service
 - [Lab-10](./doc/Lab-10.md)
-#### 3-4. DaemonSet
-#### 3-5. Job
-#### 3-6. ConfigMap
-#### 3-7. Storage
+#### 3-4. Ingress
+- [Lab-11](./doc/Lab-Ingress.md)
+#### 3-5. DaemonSet
+#### 3-6. Job
+#### 3-7. ConfigMap
+#### 3-8. Storage
 
 ## 4. CI / CD
 #### 4-1. Jenkins
